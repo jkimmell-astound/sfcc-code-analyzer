@@ -12,78 +12,77 @@ const postRegex = /server\.post\(.*?'(.*?)'/gi;
 const lineDivider = '=========================================';
 
 const promptSchema = {
-    properties: {
-	repo: {
-	    message: 'The repository that should be analyzed',
-	    required: true,
-	    default: '/',
-	},
+  properties: {
+    repo: {
+      message: 'The repository that should be analyzed',
+      required: true,
+      default: '/',
     },
+  },
 };
 
 function onlyUnique(value, index, self) {
-    return self.indexOf(value) === index;
+  return self.indexOf(value) === index;
 }
 
 /**
  * Controllers
  */
-function contollers(repo) {
-    const fileGlob = path.join(repo, '**', 'cartridge', 'controllers', '*.js');
+function controllers(repo) {
+  const fileGlob = path.join(repo, '**', 'cartridge', 'controllers', '*.js');
 
-    console.log(chalk.blue(`\n${lineDivider}\nControllers\n${lineDivider}`));
+  console.log(chalk.blue(`\n${lineDivider}\nControllers\n${lineDivider}`));
 
-    const globOptions = {
-	'ignore': 'node_modules'
-    };
+  const globOptions = {
+    ignore: 'node_modules',
+  };
 
-    glob(fileGlob, (err, globOptions, files) => {
-	if (err) {
-	    console.error(err);
-	}
+  glob(fileGlob, globOptions, (err, files) => {
+    if (err) {
+      console.error(err);
+    }
 
-	const rawEndpoints = [];
+    const rawEndpoints = [];
 
-	files.forEach((file) => {
-	    const controllerFile = file
-		.split('/')
-		.pop()
-		.replace('.js', '');
-	    const fileContents = fs.readFileSync(file).toString();
-	    console.log(typeof fileContents);
-	    const cleanFileContents = fileContents.replace(/\r?\n|\r|\n/g, '');
+    files.forEach((file) => {
+      const controllerFile = file
+        .split('/')
+        .pop()
+        .replace('.js', '');
+      const fileContents = fs.readFileSync(file).toString();
+      console.log(typeof fileContents);
+      const cleanFileContents = fileContents.replace(/\r?\n|\r|\n/g, '');
 
-	    let matchArray;
+      let matchArray;
 
-	    while ((matchArray = getRegex.exec(cleanFileContents))) { // eslint-disable-line
-		rawEndpoints.push(`${controllerFile}-${matchArray[1]}`);
-	    }
+      while ((matchArray = getRegex.exec(cleanFileContents))) { // eslint-disable-line
+        rawEndpoints.push(`${controllerFile}-${matchArray[1]}`);
+      }
 
-	    while ((matchArray = postRegex.exec(cleanFileContents))) { // eslint-disable-line
-		rawEndpoints.push(`${controllerFile}-${matchArray[1]}`);
-	    }
-	});
-
-	const endpoints = rawEndpoints.sort().filter(onlyUnique);
-
-	console.log(endpoints.reduce((prev, curr) => `${prev}\n${curr}`));
-	console.log(lineDivider);
+      while ((matchArray = postRegex.exec(cleanFileContents))) { // eslint-disable-line
+        rawEndpoints.push(`${controllerFile}-${matchArray[1]}`);
+      }
     });
-}
 
+    const endpoints = rawEndpoints.sort().filter(onlyUnique);
+
+    console.log(endpoints.reduce((prev, curr) => `${prev}\n${curr}`));
+    console.log(lineDivider);
+  });
+}
 
 prompt.override = optimist.argv;
 
 prompt.start();
 
 // Retrieve the results of the prompt and execute the compiliation of the JS files
-prompt.get(promptSchema, function (err, results) {
-    if (err) {
-	console.error(err);
-	return;
-    }
+prompt.get(promptSchema, (err, results) => {
+  if (err) {
+    console.error(err);
+    return;
+  }
 
-    contollers(results.repo);
+  controllers(results.repo);
 });
 
 /**
